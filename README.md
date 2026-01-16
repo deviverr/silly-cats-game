@@ -47,7 +47,7 @@ Suggested repo name and site URL
 I recommend using `silly-cats-city` as the repository name; after publishing your site will be available at:
 
 ```
-https://deviverr.github.io/silly-cats-city/
+https://deviverr.github.io/silly-cats-game/
 ```
 
 Public site URL (suggested / Stream):
