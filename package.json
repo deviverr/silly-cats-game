@@ -1,0 +1,17 @@
+{
+  "name": "silly-cats-city",
+  "author": "deviverr <dedpul3000a@gmail.com>",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "serve-static": "http-server -c-1 -p 8000"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Silly Cats City — Ultra Cilly 3D</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
+  <!-- Google Analytics (Measurement ID inserted) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-8QF45D3YF3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);} 
+    gtag('js', new Date());
+    gtag('config', 'G-8QF45D3YF3');
+  </script>
+  <meta name="silly-cats-city:stream-url" content="https://silly-cats-city.deviver.art">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.152.2/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="menu" class="menu">
+    <button id="menuToggle">☰ Menu</button>
+    <div id="menuContent" class="menuContent">
+      <button id="goCityBtn">Go To City</button>
+      <button id="toggleChatBtn">Toggle Chat</button>
+      <div style="display:flex;gap:6px"><input id="usernameInput" placeholder="Your name" style="padding:6px;border-radius:6px;border:1px solid #ddd" /><button id="saveNameBtn">Save</button></div>
+      <button id="startServerBtn">Start Server (instructions)</button>
+    </div>
+  </div>
+  <div id="fpsCounter">FPS: <span id="fpsVal">0</span></div>
+  <div id="ui">
+    <h1>Silly Cats — Ultra Cilly</h1>
+    <div class="controls">
+      <button id="musicToggle">Toggle Cilly Music</button>
+      <button id="moreCats">Add a Silly Cat</button>
+      <button id="loadModelBtn">Load Cat Model</button>
+      <button id="useModelBtn">Use Uploaded Model</button>
+      <button id="sparkleBtn">Toggle Confetti</button>
+      <button id="danceBtn">Dance Party</button>
+      <button id="snapshotBtn">Snapshot</button>
+      <button id="recordBtn">Start Recording</button>
+      <button id="downloadProjectBtn">Download Project Zip</button>
+    </div>
+    <div class="controls">
+      <input id="modelInput" type="file" accept=".glb,.gltf" style="display:none" />
+      <div id="scoreBox">Cute points: <span id="score">0</span></div>
+      <div id="recordStatus"></div>
+    </div>
+    <p class="hint">Click and drag to orbit, scroll to zoom. Cats do wonderfully quirky things.</p>
+  </div>
+  <div id="chat" class="chat hidden">
+    <div id="messages" class="messages"></div>
+    <div class="chatInput">
+      <input id="chatInput" placeholder="Say something silly..." />
+      <button id="sendChat">Send</button>
+    </div>
+  </div>
+  <canvas id="c"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
