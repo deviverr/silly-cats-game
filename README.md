@@ -1,12 +1,57 @@
-Silly Cats City — Ultra Cilly 3D
+Silly Cats City — Make Everything Ridiculously Silly
 
-Quick start
+Welcome to the official manual of nonsense for making and playing the silliest cat city on the internet.
 
- 
-Notes on chat and default model:
-- A default low-poly cat model is included in `defaultCatModel.js` and is used when you haven't uploaded a `.glb`.
-- Chat messages are broadcast via WebSocket and server keeps a short history; when clients connect they receive recent messages.
-- Set your displayed name in the menu's "Your name" box; it persists in `localStorage`.
+This README is intentionally small, terribly enthusiastic, and focused only on the pure joy of game-making and goofiness.
+
+How to play (very seriously)
+----------------------------
+- Use WASD or arrow keys to wiggle your cat around the city.
+- Press Space to leap like a majestic noodle. Try not to trip on confetti.
+- Click cats to gain Cute Points™ and make them go boing.
+- Press C to cycle camera modes: Third-Person Snoot, First-Person Nuzzle, or Orbit Around The Chaos.
+- Invite friends by creating a room and sending them the link — more cats, more chaos.
+
+How to make the game sillier (quick dev tips)
+--------------------------------------------
+- Add more cat colors: open `main.js`, tweak the `palette` array and watch the parade of pastel purrs.
+- Replace primitives with a custom `.glb` model: Load a GLTF in the Start menu ("Load Cat Model") and toggle "Use Uploaded Model".
+- Make new emotes: in `main.js` add entries to `emoteTextures` (create new canvas textures with more faces, stickers, or laser eyes).
+- Tune gravity/jump: change the `cat.userData.velocity.y` and gravity constant in `applyLocalMovement` for moon-cat or bowling-ball-cat physics.
+
+How to add new silly features (3 ideas to try right now)
+------------------------------------------------------
+1. Confetti Volcano — spawn confetti when score > 50 and call `spawnConfettiBurst(x,z,count)`.
+2. Dance Party Mode — make all cats dance by setting `danceParty = true` and play music with `startMusic()`.
+3. Silly Missions — add another mission in `startMission()` (e.g., `find10`, `hugTheStatue`) and update UI via `updateMissionUI()`.
+
+Developer quickstart (for people who like typing)
+------------------------------------------------
+Launch a local server (Node) and open the game:
+
+```powershell
+cd "D:\Projects\4d-projects\silly-cats-game"
+npm install
+node server.js
+Start-Process "http://localhost:8000/"
+```
+
+To run static-only (no server chat):
+
+```powershell
+python -m http.server 8000
+```
+
+Contributing (bring silliness)
+-----------------------------
+- Open issues for wacky ideas, send PRs with tiny GIFs of your cat doing absurd things, or add a new emote and call it `:insanecute:`.
+- Keep things lightweight: small patches, lots of color, zero shame.
+
+License
+-------
+Do what you like with the silliness, just give the cats credit and maybe share a screenshot.
+
+That is all. Be silly, make cats, enjoy the chaos.
 
 Publishing this project on GitHub + GitHub Pages
 ------------------------------------------------
