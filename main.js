@@ -38,77 +38,36 @@ scene.add(dir);
 // Ground (low-poly look)
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(200,200),
-  lowMat(0xf6f3ff)
+  new THREE.MeshStandardMaterial({ color: 0xf6f3ff, side: THREE.DoubleSide })
 );
-ground.rotation.x = -Math.PI/2; ground.position.y = 0; scene.add(ground);
-
-// Utility: create a cute, simple cat made from primitives
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+// collections and helpers
 const cats = [];
-let gltfCat = null;
-let useUploadedModel = false;
-let defaultModel = createDefaultCat();
-
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
-
-// score + audio for clicks
 let score = 0;
 const scoreSpan = document.getElementById('score');
 
-function playMeow(){
-  if(!window.AudioContext && !window.webkitAudioContext) return;
-  const ctx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-  const now = ctx.currentTime;
-  // two oscillators for a meow-like vowel
-  const o1 = ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.setValueAtTime(350 + Math.random()*80, now);
-  const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.setValueAtTime(220 + Math.random()*120, now);
-  const gain = ctx.createGain(); gain.gain.setValueAtTime(0.001, now);
-  const filter = ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.setValueAtTime(600, now);
-  o1.connect(filter); o2.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
-  // pitch sweep down like a meow
-  o1.frequency.exponentialRampToValueAtTime(o1.frequency.value * 0.45, now+0.25);
-  o2.frequency.exponentialRampToValueAtTime(o2.frequency.value * 0.6, now+0.28);
-  gain.gain.exponentialRampToValueAtTime(0.18, now+0.02);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now+0.7);
-  o1.start(now); o2.start(now);
-  o1.stop(now+0.8); o2.stop(now+0.8);
-}
-function createCat(x,z,color){
+// createCat: build a single cat group and add to scene
+function createCat(x, z, color){
   const g = new THREE.Group();
-  if(gltfCat && useUploadedModel){
-    const cloned = gltfCat.scene ? gltfCat.scene.clone(true) : gltfCat.clone(true);
-    cloned.traverse(node=>{ if(node.isMesh) node.castShadow = true; });
-    cloned.scale.setScalar(1.8 + Math.random()*0.6);
-    cloned.position.set(0,0.2,0);
-    g.add(cloned);
-  } else if(defaultModel){
-    const cloned = defaultModel.clone(true);
-    cloned.position.set(0,0,0);
-    cloned.scale.setScalar(1.0 + Math.random()*0.25);
-    g.add(cloned);
-  } else {
-    // body
-    const body = new THREE.Mesh(new THREE.BoxGeometry(2.6,1.6,1.4), lowMat(color));
-    body.position.set(0,1.1,0);
-    body.castShadow = true;
-    g.add(body);
-    // head
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.9,8,8), lowMat(color));
-    head.position.set(0,2.2,0.8);
-    g.add(head);
-    // ears
-    const earMat = lowMat(0xffe4f0);
-    const earGeom = new THREE.ConeGeometry(0.25,0.6,6);
-    const leftEar = new THREE.Mesh(earGeom, earMat); leftEar.position.set(-0.45,2.8,0.6); leftEar.rotation.z = 0.25; g.add(leftEar);
-    const rightEar = new THREE.Mesh(earGeom, earMat); rightEar.position.set(0.45,2.8,0.6); rightEar.rotation.z = -0.25; g.add(rightEar);
-    // eyes
-    const eyeMat = lowMat(0x111111);
-    const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.12,6,6), eyeMat); leftEye.position.set(-0.28,2.15,1.35); g.add(leftEye);
-    const rightEye = leftEye.clone(); rightEye.position.x = 0.28; g.add(rightEye);
-    // tongue (silly)
-    const tongue = new THREE.Mesh(new THREE.PlaneGeometry(0.3,0.35), new THREE.MeshStandardMaterial({color:0xff87b6, side: THREE.DoubleSide, flatShading:true}));
-    tongue.position.set(0,1.9,1.6); tongue.rotation.x = -0.6; g.add(tongue);
-  }
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.8,1.2,1.6), lowMat(color));
+  body.position.set(0,1.05,0);
+  g.add(body);
+  // ears
+  const earMat = lowMat(0xffe4f0);
+  const earGeom = new THREE.ConeGeometry(0.25,0.6,6);
+  const leftEar = new THREE.Mesh(earGeom, earMat); leftEar.position.set(-0.45,2.8,0.6); leftEar.rotation.z = 0.25; g.add(leftEar);
+  const rightEar = new THREE.Mesh(earGeom, earMat); rightEar.position.set(0.45,2.8,0.6); rightEar.rotation.z = -0.25; g.add(rightEar);
+  // eyes
+  const eyeMat = lowMat(0x111111);
+  const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.12,6,6), eyeMat); leftEye.position.set(-0.28,2.15,1.35); g.add(leftEye);
+  const rightEye = leftEye.clone(); rightEye.position.x = 0.28; g.add(rightEye);
+  // tongue (silly)
+  const tongue = new THREE.Mesh(new THREE.PlaneGeometry(0.3,0.35), new THREE.MeshStandardMaterial({color:0xff87b6, side: THREE.DoubleSide, flatShading:true}));
+  tongue.position.set(0,1.9,1.6); tongue.rotation.x = -0.6; g.add(tongue);
   // store animations
   g.userData = { bobPhase: Math.random()*Math.PI*2, spinTimer: Math.random()*4, tongueDown:true };
   g.position.set(x,0,z);
@@ -160,6 +119,24 @@ function updateConfetti(dt){
   }
 }
 
+// Movement & input
+const keys = {};
+window.addEventListener('keydown', (e)=>{ let k = e.key; if(k === ' ') k = 'space'; if(k === 'Spacebar') k = 'space'; try{ keys[k.toLowerCase()] = true; }catch(e){} });
+window.addEventListener('keyup', (e)=>{ let k = e.key; if(k === ' ') k = 'space'; if(k === 'Spacebar') k = 'space'; try{ keys[k.toLowerCase()] = false; }catch(e){} });
+
+function playMeow(){
+  try{
+    const ctx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = 440;
+    const g = ctx.createGain(); g.gain.value = 0.002;
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+    o.start(); o.stop(ctx.currentTime + 0.6);
+  }catch(e){ }
+}
+
+
 // emote sprites above cats
 const emoteTextures = [];
 function makeEmoteTexture(text){
@@ -207,11 +184,111 @@ function assignCatToPlayer(username){
     target = cats[cats.length-1];
   }
   target.userData.owner = username;
+  // mark local-control flag if this is our local saved name
+  if(getLocalName() === username) target.userData.isLocal = true;
   const nameSprite = makeNameSprite(username);
   nameSprite.position.set(0, 2.8, 0);
   target.add(nameSprite);
   playersMap.set(username, {cat: target, nameSprite});
   return {cat: target, nameSprite};
+}
+
+// send immediate position update (used after local movement)
+function sendPositionNow(){
+  const name = getLocalName();
+  const player = playersMap.get(name);
+  if(player && player.cat){
+    const c = player.cat;
+    const payload = { type: 'pos', user: name, room: currentRoom, posX: c.position.x, posY: c.position.y, posZ: c.position.z, rotY: c.rotation.y, time: Date.now() };
+    try{ if(ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload)); }catch(e){}
+  }
+}
+
+// apply movement to the local player's cat using WASD / arrow keys
+function applyLocalMovement(dt){
+  const name = getLocalName();
+  if(!name) return;
+  const info = playersMap.get(name);
+  if(!info || !info.cat) return;
+  const cat = info.cat;
+  const speed = 5.0; // units per second
+  // ensure physics state
+  if(!cat.userData.velocity) cat.userData.velocity = new THREE.Vector3(0,0,0);
+  if(typeof cat.userData.onGround === 'undefined') cat.userData.onGround = true;
+  const move = new THREE.Vector3();
+  // derive forward from camera direction (flattened)
+  const forward = new THREE.Vector3(); camera.getWorldDirection(forward); forward.y = 0; forward.normalize();
+  const right = new THREE.Vector3(); right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
+  if(keys['w'] || keys['arrowup']) move.add(forward);
+  if(keys['s'] || keys['arrowdown']) move.sub(forward);
+  if(keys['a'] || keys['arrowleft']) move.sub(right);
+  if(keys['d'] || keys['arrowright']) move.add(right);
+  if(move.lengthSq() > 0.0001){
+    move.normalize();
+    cat.position.addScaledVector(move, speed * dt);
+    // rotate to face movement direction smoothly
+    const yaw = Math.atan2(move.x, move.z);
+    cat.rotation.y += (((yaw - cat.rotation.y + Math.PI) % (Math.PI*2)) - Math.PI) * Math.min(1, dt * 8);
+    // keep within bounds
+    cat.position.x = Math.max(-90, Math.min(90, cat.position.x));
+    cat.position.z = Math.max(-90, Math.min(90, cat.position.z));
+    // send immediate update (and rely on periodic updates too)
+    sendPositionNow();
+  }
+  // Jump (space)
+  if((keys['space']) && cat.userData.onGround){ cat.userData.velocity.y = 6.0; cat.userData.onGround = false; }
+  // gravity
+  const g = 20.0;
+  cat.userData.velocity.y -= g * dt;
+  cat.position.y += cat.userData.velocity.y * dt;
+  if(cat.position.y <= 0){ cat.position.y = 0; cat.userData.velocity.y = 0; cat.userData.onGround = true; }
+}
+
+// allow wheel zoom when not in orbit mode (zoom camera towards/away from player)
+renderer.domElement.addEventListener('wheel', (e)=>{
+  try{
+    if(cameraMode === 'orbit') return; // let OrbitControls handle
+    const name = getLocalName(); if(!name) return;
+    const info = playersMap.get(name); if(!info || !info.cat) return;
+    e.preventDefault();
+    // adjust cameraDistance instead of forcing camera.position so updateCamera keeps it
+    const delta = e.deltaY * 0.03; // sensitivity
+    cameraDistance = Math.max(1.2, Math.min(40, cameraDistance + delta));
+  }catch(err){}
+},{ passive: false });
+
+// camera modes: 'third', 'first', 'orbit'
+let cameraMode = 'third';
+function setCameraMode(mode){ cameraMode = mode; const btn = document.getElementById('cameraModeBtn'); if(btn) btn.textContent = `Camera: ${mode=== 'third' ? '3rd' : mode==='first' ? '1st' : 'Orbit'}`; }
+function cycleCameraMode(){ if(cameraMode==='third') setCameraMode('first'); else if(cameraMode==='first') setCameraMode('orbit'); else setCameraMode('third'); }
+
+function updateCamera(){
+  if(cameraMode === 'orbit'){
+    controls.enabled = true; return;
+  }
+  controls.enabled = false;
+  const name = getLocalName(); if(!name) return;
+  const info = playersMap.get(name); if(!info || !info.cat) return;
+  const cat = info.cat;
+  if(cameraMode === 'third'){
+    // behind and above, use cameraDistance (adjustable via wheel)
+    const offset = new THREE.Vector3(0, 3.2, cameraDistance);
+    offset.applyAxisAngle(new THREE.Vector3(0,1,0), cat.rotation.y);
+    const camPos = new THREE.Vector3().copy(cat.position).add(offset);
+    camera.position.lerp(camPos, 0.22);
+    const target = new THREE.Vector3().copy(cat.position).add(new THREE.Vector3(0,1.6,0));
+    camera.lookAt(target);
+  } else if(cameraMode === 'first'){
+    // position near cat head, cameraDistance controls forward offset
+    const head = new THREE.Vector3(0,1.6,0);
+    const worldHead = cat.localToWorld(head.clone());
+    // desired head position plus a slight forward/back offset
+    const forward = new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0), cat.rotation.y).normalize();
+    const camPos = new THREE.Vector3().copy(worldHead).add(forward.multiplyScalar(cameraDistance*0.2));
+    camera.position.lerp(camPos, 0.6);
+    const look = new THREE.Vector3().copy(cat.position).add(new THREE.Vector3(0,1.6,0)).add(forward.multiplyScalar(8));
+    camera.lookAt(look);
+  }
 }
 
 // dance party mode
@@ -220,7 +297,7 @@ let danceStart = 0;
 function toggleDanceParty(){
   danceParty = !danceParty;
   danceStart = performance.now();
-  const el = document.getElementById('danceBtn'); el.textContent = danceParty ? 'End Dance' : 'Dance Party';
+  const el = document.getElementById('danceBtn'); if(el) el.textContent = danceParty ? 'End Dance' : 'Dance Party';
   const note = danceParty ? 'Dance party! Cats go bouncy~' : 'Dance party ended.';
   const splash = document.createElement('div'); splash.className='splash-note'; splash.textContent = note; document.body.appendChild(splash);
   setTimeout(()=>splash.remove(), 1400);
@@ -237,14 +314,17 @@ function snapshotPNG(){
 const clock = new THREE.Clock();
 function animate(){
   const t = clock.getElapsedTime();
+  const dt = clock.getDelta();
+  // apply local movement (before interpolation)
+  try{ applyLocalMovement(dt); }catch(e){ }
   for(const c of cats){
     const ud = c.userData;
-    // bob
-    c.position.y = Math.abs(Math.sin(t*2 + ud.bobPhase))*0.6;
+    // bob for non-physics cats
+    if(!ud.velocity){ c.position.y = Math.abs(Math.sin(t*2 + ud.bobPhase))*0.6; }
     // tiny head nod and body tilt
     c.rotation.y = Math.sin(t + ud.bobPhase)*0.12;
     // random silly spin every few seconds
-    ud.spinTimer -= clock.getDelta();
+    ud.spinTimer -= dt;
     if(ud.spinTimer <= 0){
       ud.spinTimer = 2 + Math.random()*6;
       // schedule a short spin
@@ -270,6 +350,9 @@ function animate(){
   // orbs float
   let i=0; for(const orb of orbs.children){ orb.position.y = 2 + Math.sin(t*1.2 + i)*0.6; i++; }
 
+  // update NPC cat AI
+  try{ updateCatsAI(dt); }catch(e){}
+
   // animate city indicator bob
   if(typeof cityIndicator !== 'undefined'){
     cityIndicator.position.y = origCityIndicatorY + Math.sin(t*2.2)*0.7;
@@ -279,7 +362,7 @@ function animate(){
   // FPS update
   updateFps();
   // update confetti
-  updateConfetti(clock.getDelta());
+  updateConfetti(dt);
 
   // dance party effects
   if(danceParty){
@@ -289,7 +372,27 @@ function animate(){
     if(Math.random() < 0.01) spawnEmoteAbove(cats[Math.floor(Math.random()*cats.length)]);
   }
 
+  // interpolate remote players smoothly
+  try{
+    const localName = getLocalName();
+    for(const [name, info] of playersMap){
+      if(!info || !info.cat) continue;
+      if(name === localName) continue;
+      if(info.targetPos){
+        info.cat.position.lerp(info.targetPos, Math.min(1, dt * 8));
+      }
+      if(typeof info.targetRotY === 'number'){
+        const a = info.targetRotY;
+        let diff = a - info.cat.rotation.y;
+        diff = ((diff + Math.PI) % (Math.PI*2)) - Math.PI;
+        info.cat.rotation.y += diff * Math.min(1, dt * 8);
+      }
+    }
+  }catch(e){ /* swallow interpolation errors */ }
+
   controls.update();
+  // update camera based on mode
+  try{ updateCamera(); }catch(e){}
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
@@ -299,18 +402,28 @@ requestAnimationFrame(animate);
 const city = new THREE.Group();
 const cityCenter = new THREE.Vector3(10,0,-6);
 function createCity(){
-  for(let x=0;x<6;x++){
-    for(let z=0;z<4;z++){
+  // make a fuller, larger city grid
+  const gx = 14, gz = 10; const spacing = 3.2;
+  for(let x=0;x<gx;x++){
+    for(let z=0;z<gz;z++){
+      // some variety: plazas and parks
+      if(Math.random() < 0.08){
+        const park = new THREE.Mesh(new THREE.BoxGeometry(2.5,0.1,2.5), lowMat(0xcfffd6));
+        park.position.set(cityCenter.x + (x-(gx/2))*spacing, 0.05, cityCenter.z + (z-(gz/2))*spacing);
+        city.add(park); continue;
+      }
       const w = 1 + Math.random()*2;
       const d = 1 + Math.random()*2;
-      const h = 1 + Math.random()*8;
-      const b = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), lowMat(0xdedede + Math.floor(Math.random()*0x333333)));
-      b.position.set(cityCenter.x + (x-2.5)*3, h/2, cityCenter.z + (z-1.5)*3);
+      const h = 1 + Math.random()*10;
+      const col = 0xdedede + Math.floor(Math.random()*0x444444);
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), lowMat(col));
+      b.position.set(cityCenter.x + (x-(gx/2))*spacing, h/2, cityCenter.z + (z-(gz/2))*spacing);
       city.add(b);
     }
   }
-  const park = new THREE.Mesh(new THREE.BoxGeometry(6,0.1,6), lowMat(0xcfffd6));
-  park.position.set(cityCenter.x, 0.05, cityCenter.z + 8);
+  // a larger central park
+  const park = new THREE.Mesh(new THREE.BoxGeometry(10,0.1,8), lowMat(0xcfffd6));
+  park.position.set(cityCenter.x, 0.05, cityCenter.z + (gz/2)*0.5);
   city.add(park);
   scene.add(city);
 }
@@ -323,6 +436,28 @@ scene.add(cityIndicator);
 
 // animate indicator in main loop
 const origCityIndicatorY = cityIndicator.position.y;
+
+// --- NPC cat AI: simple wandering for unowned cats ---
+function updateCatsAI(dt){
+  for(const c of cats){
+    if(c.userData.owner) continue; // skip owned cats
+    if(!c.userData.aiTarget || Math.random() < 0.005){
+      // pick a random point within bounds
+      c.userData.aiTarget = new THREE.Vector3((Math.random()-0.5)*80, 0, (Math.random()-0.5)*80);
+    }
+    const tgt = c.userData.aiTarget;
+    const dir = new THREE.Vector3().subVectors(tgt, c.position);
+    const dist = dir.length();
+    if(dist > 0.4){ dir.normalize(); const sp = 0.6 + Math.random()*0.6; c.position.addScaledVector(dir, sp * dt * 10); // move
+      // face toward movement
+      const yaw = Math.atan2(dir.x, dir.z);
+      c.rotation.y += (((yaw - c.rotation.y + Math.PI) % (Math.PI*2)) - Math.PI) * Math.min(1, dt * 2);
+    } else {
+      // reached, wait a bit
+      if(Math.random() < 0.02) c.userData.aiTarget = null;
+    }
+  }
+}
 
 // camera travel to city
 function gotoCity(){
@@ -374,48 +509,244 @@ sendChat.addEventListener('click', ()=>{ if(!chatInput.value) return; const text
 // WebSocket integration (connect if server provides ws)
 let ws = null;
 const playersMap = new Map(); // username -> {cat, nameSprite}
+let posInterval = null;
+let currentRoom = null;
+
+function getLocalName(){ return localStorage.getItem('silly_name') || ''; }
+
+function hasLocalName(){ const n = localStorage.getItem('silly_name'); return (typeof n === 'string' && n.trim().length > 0); }
+
+function getRoomFromUrl(){ try{ const p = new URL(location.href); return p.searchParams.get('room'); }catch(e){ return null; } }
+function setRoom(room){ currentRoom = room || null; const input = document.getElementById('roomInput'); if(input) input.value = room || ''; }
+function createRoomId(){ return Math.random().toString(36).slice(2,8); }
+function createRoom(){ const id = createRoomId(); setRoom(id); const u = new URL(location.href); u.searchParams.set('room', id); history.replaceState({}, '', u.toString()); postMessage('System', `Created room ${id}. Share the link to invite players.`); }
+function joinRoomFromInput(){ const input = document.getElementById('roomInput'); if(!input) return; const id = input.value.trim(); if(!id) return postMessage('System','Enter a room id to join'); setRoom(id); const u = new URL(location.href); u.searchParams.set('room', id); history.replaceState({}, '', u.toString()); if(ws && ws.readyState === WebSocket.OPEN){ const name = getLocalName(); ws.send(JSON.stringify({ type:'join', user: name, room: currentRoom })); } }
+
+function copyRoomLink(){
+  if(!currentRoom){
+    // create a room id first
+    const id = createRoomId(); setRoom(id);
+    const u = new URL(location.href); u.searchParams.set('room', id); history.replaceState({}, '', u.toString());
+    postMessage('System', `Created room ${id}`);
+    // if connected, notify server
+    try{ if(ws && ws.readyState === WebSocket.OPEN){ const name = getLocalName(); ws.send(JSON.stringify({ type:'join', user: name, room: currentRoom })); startPositionUpdates(); } }catch(e){}
+  }
+  const u = new URL(location.href); u.searchParams.set('room', currentRoom); navigator.clipboard.writeText(u.toString()).then(()=> postMessage('System','Room link copied to clipboard'));
+}
+
+function startPositionUpdates(){
+  if(posInterval) return;
+  posInterval = setInterval(()=>{
+    const name = getLocalName();
+    const player = playersMap.get(name);
+    if(player && player.cat && ws && ws.readyState === WebSocket.OPEN){
+      const c = player.cat;
+      const payload = { type: 'pos', user: name, room: currentRoom, posX: c.position.x, posY: c.position.y, posZ: c.position.z, rotY: c.rotation.y, time: Date.now() };
+      try{ ws.send(JSON.stringify(payload)); }catch(e){}
+    }
+  }, 150);
+}
+
+function stopPositionUpdates(){ if(posInterval){ clearInterval(posInterval); posInterval = null; } }
 function tryConnectWS(){
   try{
     const proto = (location.protocol === 'https:') ? 'wss' : 'ws';
     const url = `${proto}://${location.host}`; // server.js runs on same host:port when started with npm start
     ws = new WebSocket(url);
     ws.onopen = ()=>{ postMessage('System','Connected to chat server');
-      // send join
-      const name = localStorage.getItem('silly_name') || 'Player';
-      ws.send(JSON.stringify({type:'join', user: name}));
+      // send join (include room if present) only if user has set a name
+      const urlRoom = getRoomFromUrl(); if(urlRoom) setRoom(urlRoom);
+      if(!hasLocalName()){
+        postMessage('System','Please set a display name before joining the room.');
+      } else {
+        const name = getLocalName();
+        ws.send(JSON.stringify({type:'join', user: name, room: currentRoom}));
+        // start sending position updates for our player
+        startPositionUpdates();
+      }
     };
     ws.onmessage = (ev)=>{
       try{
         const payload = JSON.parse(ev.data);
-        if(payload.type === 'history' && Array.isArray(payload.messages)){
+        const type = payload && payload.type;
+        if(type === 'history' && Array.isArray(payload.messages)){
           payload.messages.forEach(m=> postMessage(m.user || 'Anon', m.text || '', m.time));
-        } else if(payload.type === 'chat'){
-          postMessage(payload.user || 'Anon', payload.text || '', payload.time);
-          // reaction: play boop and confetti for other players
-          if(payload.user !== (localStorage.getItem('silly_name')||'Player')){
-            playBoop();
-            if(Math.random()>0.3) spawnConfettiBurst(payload.posX||camera.position.x, payload.posZ||camera.position.z, 20);
+          return;
+        }
+        if(type === 'members'){
+          // payload: {type:'members', room, members: []}
+          try{ renderPlayers(payload.members || []); (payload.members || []).forEach(n=> assignCatToPlayer(n)); }catch(e){}
+          return;
+        }
+        if(type === 'host'){
+          try{
+            const hostEl = document.getElementById('hostName'); if(hostEl) hostEl.textContent = payload.user || '-';
+            const startBtn = document.getElementById('startRoomBtn'); const local = getLocalName();
+            if(startBtn) startBtn.disabled = (payload.user !== local);
+            if(payload.user === local) postMessage('System','You are the host of this room');
+          }catch(e){}
+          return;
+        }
+        if(type === 'chat'){
+          postMessage(payload.user || 'Anon', payload.text || '');
+          return;
+        }
+            if(type === 'emote'){
+              try{
+                const who = payload.user;
+                if(who){ if(!playersMap.has(who)) assignCatToPlayer(who); const info = playersMap.get(who); if(info && info.cat){ spawnEmoteAbove(info.cat, payload.emoteIndex); } }
+              }catch(e){}
+              return;
+            }
+        if(type === 'pos'){
+          // update remote player's target position (do not snap)
+          const localName = getLocalName();
+          if(payload.user && payload.user !== localName){
+            if(!playersMap.has(payload.user)) assignCatToPlayer(payload.user);
+            const entry = playersMap.get(payload.user);
+            if(entry && entry.cat){
+              try{
+                entry.targetPos = new THREE.Vector3(payload.posX, payload.posY, payload.posZ);
+                entry.targetRotY = (typeof payload.rotY === 'number') ? payload.rotY : entry.cat.rotation.y;
+                entry.lastUpdate = Date.now();
+              }catch(e){}
+            }
           }
-        } else if(payload.type === 'join'){
-          postMessage('System', `${payload.user || 'Anon'} joined`, payload.time || Date.now());
-          // assign a cat to this player (if not existing)
-          assignCatToPlayer(payload.user || 'Anon');
+          return;
+        }
+        if(type === 'start'){
+          postMessage('System', 'Room has started — have fun!');
+          // hide start modal if still visible
+          try{ hideStartModal(); }catch(e){}
+          return;
+        }
+        if(type === 'kicked'){
+          const local = getLocalName();
+          if(payload.user === local){ alert('You have been kicked from the room'); try{ ws.close(); }catch(e){} location.reload(); }
+          else { postMessage('System', `${payload.user} was kicked by host`); }
+          return;
+        }
+        if(type === 'kick_notice'){
+          postMessage('System', `${payload.user} was kicked by ${payload.by}`);
+          return;
+        }
+        if(type === 'leave'){
+          postMessage('System', `${payload.user || 'Anon'} left`, payload.time || Date.now());
+          if(payload.user && playersMap.has(payload.user)){
+            const info = playersMap.get(payload.user);
+            if(info && info.cat){ if(info.nameSprite && info.cat.children.includes(info.nameSprite)) info.cat.remove(info.nameSprite); info.cat.userData.owner = null; }
+            playersMap.delete(payload.user);
+          }
+          return;
+        }
+        if(type === 'error'){
+          postMessage('System', `Server: ${payload.message || 'error'}`);
+          return;
         }
       } catch(e){ console.error(e); }
     };
-    ws.onclose = ()=>{ postMessage('System','Disconnected from chat server'); ws = null; };
+    ws.onclose = ()=>{ postMessage('System','Disconnected from chat server'); ws = null; stopPositionUpdates(); };
   }catch(e){ console.warn('WS connect failed', e); ws = null; }
 }
 
 function sendChatMessage(text){
   const name = localStorage.getItem('silly_name') || 'Player';
-  const payload = { type:'chat', user: name, text };
+  const payload = { type:'chat', user: name, text, room: currentRoom };
   if(ws && ws.readyState === WebSocket.OPEN){ ws.send(JSON.stringify(payload)); }
   else { postMessage(name, text); }
 }
 
-// Try to connect on load
-tryConnectWS();
+function sendEmote(index){
+  const name = getLocalName();
+  if(!name) return;
+  // spawn locally
+  const info = playersMap.get(name);
+  if(info && info.cat) spawnEmoteAbove(info.cat, index);
+  // send to server if connected
+  const payload = { type:'emote', user: name, room: currentRoom, emoteIndex: index, time: Date.now() };
+  try{ if(ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload)); }catch(e){}
+}
+
+// Do not auto-connect on load — wait for player to choose multiplayer in the Start menu
+// tryConnectWS();
+
+// wire room UI buttons
+const createRoomBtn = document.getElementById('createRoomBtn');
+const joinRoomBtn = document.getElementById('joinRoomBtn');
+const copyRoomBtn = document.getElementById('copyRoomBtn');
+if(createRoomBtn) createRoomBtn.addEventListener('click', ()=> createRoom());
+if(joinRoomBtn) joinRoomBtn.addEventListener('click', ()=> joinRoomFromInput());
+if(copyRoomBtn) copyRoomBtn.addEventListener('click', ()=> copyRoomLink());
+
+// Start Room button
+const startRoomBtn = document.getElementById('startRoomBtn');
+if(startRoomBtn) startRoomBtn.addEventListener('click', ()=>{
+  if(!(startRoomBtn.disabled === false)) return postMessage('System','Only the host can start the room');
+  if(!ws || ws.readyState !== WebSocket.OPEN) return postMessage('System','Not connected');
+  ws.send(JSON.stringify({ type: 'start', room: currentRoom, user: getLocalName(), time: Date.now() }));
+  postMessage('System','Start message sent');
+});
+
+// Kick UI
+const kickInput = document.getElementById('kickInput');
+const kickBtn = document.getElementById('kickBtn');
+if(kickBtn) kickBtn.addEventListener('click', ()=>{
+  const target = kickInput && kickInput.value && kickInput.value.trim();
+  if(!target) return postMessage('System','Enter a username to kick');
+  if(!ws || ws.readyState !== WebSocket.OPEN) return postMessage('System','Not connected');
+  ws.send(JSON.stringify({ type: 'kick', room: currentRoom, user: getLocalName(), target }));
+  postMessage('System', `Kick request sent for ${target}`);
+});
+
+// set initial room from URL if present
+const initialRoom = getRoomFromUrl(); if(initialRoom) setRoom(initialRoom);
+
+// Public rooms (lobby) UI
+const lobbyBtn = document.getElementById('lobbyBtn');
+const roomsPanel = document.getElementById('roomsPanel');
+const roomsList = document.getElementById('roomsList');
+const refreshRoomsBtn = document.getElementById('refreshRoomsBtn');
+
+async function fetchRooms(){
+  try{
+    const resp = await fetch('/rooms');
+    if(!resp.ok) throw new Error('Fetch failed');
+    const data = await resp.json();
+    if(!Array.isArray(data) || data.length===0){ roomsList.innerHTML = '<div>No active rooms</div>'; return; }
+    roomsList.innerHTML = '';
+    data.sort((a,b)=>b.count - a.count);
+    for(const r of data){
+      const el = document.createElement('div');
+      el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center'; el.style.padding='6px 0';
+      const title = document.createElement('div'); title.textContent = `${r.room} — ${r.count} player(s)`;
+      const btn = document.createElement('button'); btn.textContent = 'Join'; btn.style.marginLeft='8px';
+      btn.addEventListener('click', ()=>{ setRoom(r.room); const u = new URL(location.href); u.searchParams.set('room', r.room); history.replaceState({},'',u.toString()); if(ws && ws.readyState===WebSocket.OPEN){ ws.send(JSON.stringify({type:'join', user: getLocalName(), room: r.room})); } roomsPanel.style.display='none'; });
+      el.appendChild(title); el.appendChild(btn); roomsList.appendChild(el);
+    }
+  }catch(e){ roomsList.innerHTML = '<div>Error fetching rooms</div>'; }
+}
+
+if(lobbyBtn) lobbyBtn.addEventListener('click', ()=>{ if(roomsPanel.style.display==='none'){ roomsPanel.style.display='block'; fetchRooms(); } else { roomsPanel.style.display='none'; } });
+if(refreshRoomsBtn) refreshRoomsBtn.addEventListener('click', ()=> fetchRooms());
+
+// players panel helpers
+const playersList = document.getElementById('playersList');
+const playersCount = document.getElementById('playersCount');
+function renderPlayers(members){
+  try{
+    if(!playersList) return;
+    playersList.innerHTML = '';
+    if(!members || members.length===0){ playersList.innerHTML = '<div>No players</div>'; if(playersCount) playersCount.textContent = '0'; return; }
+    for(const name of members){
+      const el = document.createElement('div'); el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center'; el.style.padding='4px 0';
+      const n = document.createElement('div'); n.textContent = name; n.style.cursor='pointer'; n.addEventListener('click', ()=>{ const k = document.getElementById('kickInput'); if(k) k.value = name; });
+      el.appendChild(n);
+      playersList.appendChild(el);
+    }
+    if(playersCount) playersCount.textContent = String(members.length);
+  }catch(e){ console.warn('renderPlayers', e); }
+}
+
 
 // small boop sound
 function playBoop(){
@@ -444,18 +775,45 @@ startServerBtn.addEventListener('click', ()=>{ alert('To start the server locall
 // username input
 const usernameInput = document.getElementById('usernameInput');
 const saveNameBtn = document.getElementById('saveNameBtn');
-usernameInput.value = localStorage.getItem('silly_name') || '';
-saveNameBtn.addEventListener('click', ()=>{ localStorage.setItem('silly_name', usernameInput.value || 'Player'); alert('Saved name'); tryConnectWS(); });
-// also assign local player to a cat immediately
-if(localStorage.getItem('silly_name')) assignCatToPlayer(localStorage.getItem('silly_name'));
+// initialize name from localStorage or URL param `user`
+const urlParams = (()=>{ try{ return new URL(location.href).searchParams; }catch(e){ return new URLSearchParams(window.location.search); } })();
+const urlUser = urlParams.get('user');
+if(urlUser && (!localStorage.getItem('silly_name') || localStorage.getItem('silly_name')!==urlUser)){
+  localStorage.setItem('silly_name', urlUser);
+}
+usernameInput.value = localStorage.getItem('silly_name') || (urlUser || '');
+saveNameBtn.addEventListener('click', ()=>{
+  const v = (usernameInput.value || '').trim();
+  if(!v){ alert('Enter a name before saving'); return; }
+  localStorage.setItem('silly_name', v);
+  postMessage('System', `Saved name: ${v}`);
+  // if WS exists and is open, send a join now
+  try{ if(ws && ws.readyState === WebSocket.OPEN){ ws.send(JSON.stringify({ type:'join', user: v, room: currentRoom })); startPositionUpdates(); } else { tryConnectWS(); } }catch(e){}
+});
+// also assign local player to a cat immediately (use URL user if present)
+const initialName = localStorage.getItem('silly_name') || urlUser;
+if(initialName) assignCatToPlayer(initialName);
+
+// ESC toggles menu
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){
+    const menu = document.getElementById('menuContent'); if(menu) menu.style.display = (menu.style.display === 'none' ? 'flex' : 'none');
+  }
+  if(e.key.toLowerCase() === 'c') cycleCameraMode();
+});
+
+// camera button
+const cameraModeBtn = document.getElementById('cameraModeBtn'); if(cameraModeBtn){ cameraModeBtn.addEventListener('click', ()=> cycleCameraMode()); }
 
 // Procedural 'cilly' music via WebAudio
 let audioCtx = null; let isPlaying = false; let musicNodes = [];
+let masterGain = null;
 function startMusic(){
   if(audioCtx==null) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if(isPlaying) return; isPlaying=true;
   // create playful arpeggio using oscillators and noise percussive
-  const master = audioCtx.createGain(); master.gain.value = 0.12; master.connect(audioCtx.destination);
+  if(!masterGain){ masterGain = audioCtx.createGain(); masterGain.gain.value = 0.12; masterGain.connect(audioCtx.destination); }
+  const master = masterGain;
   const baseNotes = [440, 523.25, 659.25, 880];
   let beat = 0;
   const playStep = ()=>{
@@ -496,20 +854,55 @@ musicToggle.addEventListener('click', async ()=>{
 const moreCats = document.getElementById('moreCats');
 moreCats.addEventListener('click', ()=>{ const x=(Math.random()-0.5)*12; const z=(Math.random()-0.5)*12; createCat(x,z,palette[Math.floor(Math.random()*palette.length)]); });
 
+// --- Start modal wiring (pre-game screen)
+const startModalEl = document.getElementById('startModal');
+const playBtn = document.getElementById('playBtn');
+const optionsBtn = document.getElementById('optionsBtn');
+const startName = document.getElementById('startName');
+const startRoomInput = document.getElementById('startRoomInput');
+const startVolume = document.getElementById('startVolume');
+
+function hideStartModal(){ if(startModalEl) startModalEl.style.display = 'none'; }
+
+function applyStartVolume(v){ try{ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if(!masterGain) masterGain = audioCtx.createGain(); masterGain.gain.value = Number(v); masterGain.connect(audioCtx.destination); }catch(e){} }
+
+if(startVolume){ startVolume.addEventListener('input', (e)=> applyStartVolume(e.target.value)); }
+
+if(playBtn){ playBtn.addEventListener('click', ()=>{
+  const name = (startName && startName.value && startName.value.trim()) ? startName.value.trim() : null;
+  if(!name){ alert('Please enter a nickname to play.'); return; }
+  localStorage.setItem('silly_name', name);
+  // mode selection
+  const modeEl = document.querySelector('input[name="mode"]:checked');
+  const mode = modeEl ? modeEl.value : 'single';
+  // room if provided
+  const r = (startRoomInput && startRoomInput.value && startRoomInput.value.trim()) ? startRoomInput.value.trim() : null;
+  if(mode === 'multi'){
+    if(r) setRoom(r);
+    tryConnectWS();
+    // server join will be sent on ws.onopen
+  } else {
+    assignCatToPlayer(name);
+  }
+  if(startVolume) applyStartVolume(startVolume.value);
+  hideStartModal();
+}); }
+
+if(optionsBtn){ optionsBtn.addEventListener('click', ()=>{ const s = document.getElementById('startOptions'); if(s) s.style.display = s.style.display === 'none' ? 'block' : 'none'; }); }
+
 // new UI buttons: confetti, dance, snapshot
 const sparkleBtn = document.getElementById('sparkleBtn');
 const danceBtn = document.getElementById('danceBtn');
 const snapshotBtn = document.getElementById('snapshotBtn');
-sparkleBtn.addEventListener('click', ()=>{ confettiEnabled = !confettiEnabled; sparkleBtn.classList.toggle('button-silly'); if(confettiEnabled){ spawnConfettiBurst(camera.position.x, camera.position.z, 48); } });
-danceBtn.addEventListener('click', ()=>{ toggleDanceParty(); });
-snapshotBtn.addEventListener('click', ()=>{ snapshotPNG(); });
+if(sparkleBtn) sparkleBtn.addEventListener('click', ()=>{ confettiEnabled = !confettiEnabled; sparkleBtn.classList.toggle('button-silly'); if(confettiEnabled){ spawnConfettiBurst(camera.position.x, camera.position.z, 48); } });
+if(danceBtn) danceBtn.addEventListener('click', ()=>{ toggleDanceParty(); });
+if(snapshotBtn) snapshotBtn.addEventListener('click', ()=>{ snapshotPNG(); });
 
 // Model loader UI
 const modelInput = document.getElementById('modelInput');
 const loadModelBtn = document.getElementById('loadModelBtn');
 const useModelBtn = document.getElementById('useModelBtn');
-loadModelBtn.addEventListener('click', ()=> modelInput.click());
-modelInput.addEventListener('change', (ev)=>{
+if(loadModelBtn && modelInput){ loadModelBtn.addEventListener('click', ()=> modelInput.click()); modelInput.addEventListener('change', (ev)=>{
   const file = ev.target.files && ev.target.files[0];
   if(!file) return;
   const url = URL.createObjectURL(file);
@@ -517,11 +910,11 @@ modelInput.addEventListener('change', (ev)=>{
   loader.load(url, gltf=>{
     gltfCat = gltf;
     useUploadedModel = true;
-    useModelBtn.textContent = 'Using Uploaded Model';
+    if(useModelBtn) useModelBtn.textContent = 'Using Uploaded Model';
     alert('Model loaded—new cats will use your model.');
   }, undefined, err=>{ console.error(err); alert('Failed to load model'); });
-});
-useModelBtn.addEventListener('click', ()=>{ useUploadedModel = !useUploadedModel; useModelBtn.textContent = useUploadedModel? 'Using Uploaded Model' : 'Using Primitives'; });
+}); }
+if(useModelBtn) useModelBtn.addEventListener('click', ()=>{ useUploadedModel = !useUploadedModel; useModelBtn.textContent = useUploadedModel? 'Using Uploaded Model' : 'Using Primitives'; });
 
 // Click interactions: select cat, increment score, play meow and bounce
 renderer.domElement.addEventListener('pointerdown', (e)=>{
@@ -540,6 +933,8 @@ renderer.domElement.addEventListener('pointerdown', (e)=>{
     score += 1;
     scoreSpan.textContent = String(score);
     playMeow();
+    // mission progress
+    try{ if(currentMission){ currentMission.progress++; updateMissionUI(); } }catch(e){}
     // quick bounce animation
     const orig = hit.scale.clone();
     const start = performance.now();
@@ -554,11 +949,30 @@ renderer.domElement.addEventListener('pointerdown', (e)=>{
   }
 });
 
+// --- Missions (simple example) ---
+let currentMission = null;
+function startMission(id){
+  if(id === 'find5'){
+    currentMission = { id:'find5', title:'Find 5 cats', goal:5, progress:0, completed:false };
+  }
+  updateMissionUI();
+}
+function updateMissionUI(){
+  const missionText = document.getElementById('missionText');
+  const missionProgress = document.getElementById('missionProgress');
+  if(!currentMission){ if(missionText) missionText.textContent = 'None'; if(missionProgress) missionProgress.textContent=''; return; }
+  if(missionText) missionText.textContent = currentMission.title;
+  if(missionProgress) missionProgress.textContent = `(${currentMission.progress}/${currentMission.goal})`;
+  if(currentMission.progress >= currentMission.goal && !currentMission.completed){ currentMission.completed = true; postMessage('System','Mission completed!'); }
+}
+// auto-start a mission for demo
+startMission('find5');
+
 // Recording (WebM) via MediaRecorder
 const recordBtn = document.getElementById('recordBtn');
 const recordStatus = document.getElementById('recordStatus');
 let recorder = null; let recordedChunks = [];
-recordBtn.addEventListener('click', ()=>{
+if(recordBtn){ recordBtn.addEventListener('click', ()=>{
   if(!recorder){
     const stream = canvas.captureStream(60);
     recorder = new MediaRecorder(stream, {mimeType:'video/webm;codecs=vp9'});
@@ -575,11 +989,11 @@ recordBtn.addEventListener('click', ()=>{
   } else {
     recorder.stop();
   }
-});
+}); }
 
-// Download project zip using JSZip
+// optional download button (guarded in case element exists)
 const downloadProjectBtn = document.getElementById('downloadProjectBtn');
-downloadProjectBtn.addEventListener('click', async ()=>{
+if(downloadProjectBtn){ downloadProjectBtn.addEventListener('click', async ()=>{
   if(!window.JSZip){
     recordStatus.textContent = 'Loading zipper...';
     await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
@@ -593,7 +1007,7 @@ downloadProjectBtn.addEventListener('click', async ()=>{
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'silly-cats-game.zip'; a.click(); URL.revokeObjectURL(url);
   recordStatus.textContent = 'Download ready';
-});
+}); }
 
 // fun little camera intro
 let introT = 0; const introDur = 2.2;
