@@ -25,12 +25,60 @@
   </script>
 </head>
 <body>
+  <div id="startModal" class="start-modal">
+    <div class="start-modal-content">
+      <h2>Silly Cats City</h2>
+      <p>Choose a nickname and play — singleplayer or multiplayer.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:center;">
+        <input id="startName" placeholder="Your nickname" style="padding:8px;border-radius:6px;border:1px solid #ddd;width:85%;text-align:center" />
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label><input type="radio" name="mode" value="single" checked /> Singleplayer</label>
+          <label><input type="radio" name="mode" value="multi" /> Multiplayer</label>
+        </div>
+        <input id="startRoomInput" placeholder="Room id (multiplayer)" style="padding:6px;border-radius:6px;border:1px solid #ddd;width:60%" />
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:6px">
+          <button id="playBtn">Play</button>
+          <button id="optionsBtn">Options</button>
+        </div>
+        <div id="startOptions" style="margin-top:10px;width:90%;display:flex;justify-content:center;">
+          <label style="width:100%">Ambient volume: <input id="startVolume" type="range" min="0" max="1" step="0.01" value="0.12" style="width:60%"/></label>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="menu" class="menu">
     <button id="menuToggle">☰ Menu</button>
     <div id="menuContent" class="menuContent">
       <button id="goCityBtn">Go To City</button>
       <button id="toggleChatBtn">Toggle Chat</button>
       <div style="display:flex;gap:6px"><input id="usernameInput" placeholder="Your name" style="padding:6px;border-radius:6px;border:1px solid #ddd" /><button id="saveNameBtn">Save</button></div>
+      <div style="display:flex;gap:6px;margin-top:8px;align-items:center">
+        <input id="roomInput" placeholder="room id (optional)" style="padding:6px;border-radius:6px;border:1px solid #ddd" />
+        <button id="createRoomBtn">Create Room</button>
+        <button id="joinRoomBtn">Join Room</button>
+        <button id="copyRoomBtn">Copy Link</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;align-items:center">
+        <div id="hostBadge">Host: <span id="hostName">-</span></div>
+        <button id="startRoomBtn">Start Room</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;align-items:center">
+        <input id="kickInput" placeholder="username to kick" style="padding:6px;border-radius:6px;border:1px solid #ddd" />
+        <button id="kickBtn">Kick Player</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;align-items:center">
+        <button id="lobbyBtn">Public Rooms</button>
+        <div id="roomsPanel" style="display:none;border:1px solid #ddd;padding:8px;border-radius:6px;background:#fff;max-height:180px;overflow:auto;width:320px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><strong>Active Rooms</strong><button id="refreshRoomsBtn">Refresh</button></div>
+          <div id="roomsList">No rooms</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;align-items:flex-start">
+        <div id="playersPanel" style="border:1px solid #ddd;padding:8px;border-radius:6px;background:#fff;max-height:180px;overflow:auto;width:220px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><strong>Players</strong><div id="playersCount">0</div></div>
+          <div id="playersList"><div>No players</div></div>
+        </div>
+      </div>
       <button id="startServerBtn">Start Server (instructions)</button>
     </div>
   </div>
@@ -40,17 +88,18 @@
     <div class="controls">
       <button id="musicToggle">Toggle Cilly Music</button>
       <button id="moreCats">Add a Silly Cat</button>
-      <button id="loadModelBtn">Load Cat Model</button>
-      <button id="useModelBtn">Use Uploaded Model</button>
-      <button id="sparkleBtn">Toggle Confetti</button>
-      <button id="danceBtn">Dance Party</button>
+      <button id="cameraModeBtn">Camera: 3rd</button>
       <button id="snapshotBtn">Snapshot</button>
-      <button id="recordBtn">Start Recording</button>
-      <button id="downloadProjectBtn">Download Project Zip</button>
+      <div class="emote-buttons" style="display:inline-flex;gap:6px;margin-left:10px;align-items:center">
+        <button class="emoteBtn" data-idx="0">:3</button>
+        <button class="emoteBtn" data-idx="1">^_^</button>
+        <button class="emoteBtn" data-idx="2">uwu</button>
+        <button class="emoteBtn" data-idx="3">meow</button>
+      </div>
     </div>
     <div class="controls">
-      <input id="modelInput" type="file" accept=".glb,.gltf" style="display:none" />
       <div id="scoreBox">Cute points: <span id="score">0</span></div>
+      <div id="missionBox">Mission: <span id="missionText">None</span> <span id="missionProgress"></span></div>
       <div id="recordStatus"></div>
     </div>
     <p class="hint">Click and drag to orbit, scroll to zoom. Cats do wonderfully quirky things.</p>
@@ -63,6 +112,18 @@
     </div>
   </div>
   <canvas id="c"></canvas>
+  <div id="gameFooter" class="game-footer">
+    <div class="game-footer-inner">
+      <strong>Silly Cats City — Quick Guide:</strong>
+      <ul>
+        <li>Controls: Move with WASD or arrow keys. Press <em>Space</em> to jump.</li>
+        <li>Camera: press <em>C</em> or click the Camera button to cycle views (3rd / 1st / Orbit). Use mouse wheel to zoom in 1st/3rd view.</li>
+        <li>Play modes: singleplayer or multiplayer rooms. Use the Start menu to join or create a room.</li>
+        <li>Objective: play silly missions (example: find cats), interact and enjoy the quirky world.</li>
+      </ul>
+      <div>Note: Your player is represented by a simple cat model. NPC cats wander the map.</div>
+    </div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script type="module" src="main.js"></script>
 </body>
