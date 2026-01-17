@@ -20,95 +20,81 @@ Steps to publish:
 
 ```powershell
 cd 'd:\Projects\4d-projects\silly-cats-game'
-git init
-git add .
-git commit -m "Initial silly-cats-game"
-git branch -M main
-git remote add origin https://github.com/YOUR_USER/YOUR_REPO.git
-git push -u origin main
-```
+# Silly Cats City — Ultra Cilly 3D
 
-3. The GitHub Actions workflow `.github/workflows/deploy.yml` deploys the `silly-cats-game` folder to GitHub Pages (it will publish to the `gh-pages` branch by default). Wait a minute after pushing and check the Actions tab for deployment success.
+**Latest update:** 2026-01-17 — pre-game UI, multiplayer scaffolding, emotes, missions, and a detailed checkpoint were added.
 
-4. After the workflow runs, your site will be available at `https://YOUR_USER.github.io/YOUR_REPO/` (pages may take a minute).
+## Overview
 
-Notes and alternatives
-- If you prefer to serve from the `docs/` folder on the `main` branch, copy the contents of `silly-cats-game` into a `docs/` folder and enable Pages from the `docs` folder in repo settings.
-- The PowerShell script `start-release.ps1` creates a zip under `releases/` you can attach to GitHub release assets.
+Silly Cats City is a browser Three.js demo/game with low-poly cats, procedural city blocks, simple missions, and optional multiplayer using the included Node WebSocket server.
 
-Google Analytics
-----------------
+## Recent work
 
-If you want to add Google Analytics, replace the `G-XXXXXXX` placeholder in `index.html` with your GA4 Measurement ID. The page includes a small gtag snippet which will begin sending page views once you replace the ID.
+- Pre-game nickname + single/multi choice, room create/join UI.
+- Local player assignment, WASD movement, jump/gravity, three camera modes (3rd/1st/Orbit) with persistent zoom.
+- NPC wandering cats, mission scaffold (`find5`), emotes, confetti/dance-party effects, and WebAudio music scaffolding.
+- WebSocket server (`server.js`) for rooms, chat, host actions and persisted chat history.
+- Checkpoint file: `CHECKPOINT_FULL.md` (detailed session notes, 2026-01-17).
 
-Suggested repo name and site URL
---------------------------------
+## Run locally (development)
 
-I recommend using `silly-cats-city` as the repository name; after publishing your site will be available at:
-
-```
-https://deviverr.github.io/silly-cats-game/
-```
-
-Public site URL (suggested / Stream):
-
-https://silly-cats-city.deviver.art
-
-Google Analytics Measurement ID used in this repo: `G-8QF45D3YF3` (Stream ID 13315253127)
-
-
-Python 3 built-in server:
+1. Install dependencies and start the server:
 
 ```powershell
-python -m http.server 8000
-```
-
-Then open `http://localhost:8000` in your browser.
-
-Or use `npx serve`:
-
-```powershell
-npx serve .
-```
-
-What this is
-
-- A tiny Three.js scene with cute, primitive "cats" made from simple shapes.
-- Cats perform random, quirky, silly actions (bobbing, short spins, tongue-out wiggles).
-- A procedural WebAudio music engine generates ultra-cilly background music you can toggle.
-
-Notes & next steps
-
-- Replace primitive cats with GLTF models for extra cuteness.
-- Add sound effects (meows, boops) — use short public-domain samples or synthesize with WebAudio.
-- Adjust colors and animations to taste.
-
-New features added:
-
-- Upload your own `.glb`/`.gltf` cat model using the "Load Cat Model" button. Toggle "Use Uploaded Model" to switch between primitives and your model.
-- Click a cat to earn "cute points" — each click plays a silly meow and briefly bounces the cat.
-- Record the canvas as WebM using the "Start Recording" button; stop to get a download.
-- Download a packaged zip of the project using "Download Project Zip" (JSZip loaded from CDN).
-
-WebSocket chat server
-
-If you run the project with the included Node server, the chat UI will connect to the WebSocket endpoint and broadcast messages between connected players.
-
-Run with Node (recommended):
-
-```powershell
-cd 'd:\Projects\4d-projects\silly-cats-game'
+cd "D:\Projects\4d-projects\silly-cats-game"
 npm install
-npm start
+node server.js
 ```
 
-This starts `server.js` which serves the static files and hosts a WebSocket chat endpoint on the same port (default 8000). Open the same URL in multiple browser windows to chat between them.
-
-To run a quick static-only server (no WebSocket), you can also use:
+2. Open the game in a browser (multiple windows simulate players):
 
 ```powershell
-python -m http.server 8000
+Start-Process "http://localhost:8000/?room=test&user=Alice"
+Start-Process "http://localhost:8000/?room=test&user=Bob"
 ```
 
+Port note: the server uses port `8000` by default. If the port is occupied, stop the other process (example):
 
-Enjoy the silliness! If you'd like, I can add a packaged download, build scripts, or convert this to a Unity prototype.
+```powershell
+taskkill /F /IM node.exe
+node server.js
+```
+
+## Multiplayer details
+
+- Rooms are short IDs. First joiner becomes `host` and can `start` or `kick` players.
+- Client sends `pos` messages periodically; remote clients interpolate positions.
+- Supported WS message types: `join`, `chat`, `pos`, `members`, `host`, `start`, `kick`, `kicked`, `kick_notice`, `leave`, `error`, `emote`, and `history`.
+
+## Publish to GitHub Pages
+
+I pushed changes to branch `checkpoint/2026-01-17` and merged them into `main`. If your repository has GitHub Pages enabled to serve from `main` (or a GH Action that publishes on push), pushing to `main` will trigger a redeploy automatically.
+
+To merge locally and push (example):
+
+```bash
+git checkout main
+git pull origin main
+git merge checkpoint/2026-01-17
+git push origin main
+```
+
+After pushing, check the repository's Actions tab for the deployment workflow and the Pages settings for the published URL.
+
+## Files to inspect
+
+- `index.html`, `main.js`, `style.css` — client code and UI.
+- `server.js` — simple server + WebSocket handling.
+- `CHECKPOINT_FULL.md` — full session checkpoint.
+
+## Next recommended work
+
+1. Synchronize mission and NPC state across clients (`mission_update`, `npc_state`) via server relay.
+2. Emote replication rate-limits and audit events on server.
+3. Replace primitive cats with GLTF assets and add walking animations.
+
+## License
+
+See the repository `LICENSE` file.
+
+Enjoy — tell me if you want me to open a PR description, create release notes, or continue implementing server-side mission sync.
